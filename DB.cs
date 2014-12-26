@@ -151,6 +151,20 @@ namespace LevelDB
             Put(null, key, value);
         }
 
+        public void Put(WriteOptions options, string key, byte[] value)
+        {
+            CheckDisposed();
+            if (options == null) {
+                options = new WriteOptions();
+            }
+            Native.leveldb_put(Handle, options.Handle, key, value);
+        }
+
+        public void Put(string key, byte[] value)
+        {
+            Put(null, key, value);
+        }
+
         public void Delete(WriteOptions options, string key)
         {
             CheckDisposed();
@@ -194,6 +208,20 @@ namespace LevelDB
         public string Get(string key)
         {
             return Get(null, key);
+        }
+
+        public byte[] GetRaw(ReadOptions options, string key)
+        {
+            CheckDisposed();
+            if (options == null) {
+                options = new ReadOptions();
+            }
+            return Native.leveldb_get_bytes(Handle, options.Handle, key);
+        }
+
+        public byte[] GetRaw(string key)
+        {
+            return GetRaw(null, key);
         }
 
         IEnumerator IEnumerable.GetEnumerator()

@@ -115,6 +115,14 @@ namespace LevelDB
                                               string value,
                                               UIntPtr valueLength,
                                               out IntPtr error);
+        [DllImport("leveldb", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void leveldb_put(IntPtr db,
+                                              IntPtr writeOptions,
+                                              string key,
+                                              UIntPtr keyLength,
+                                              byte[] value,
+                                              UIntPtr valueLength,
+                                              out IntPtr error);
 
         public static void leveldb_put(IntPtr db,
                                        IntPtr writeOptions,
@@ -141,6 +149,34 @@ namespace LevelDB
             Native.leveldb_put(db, writeOptions,
                                key, keyLength,
                                value, valueLength, out error);
+            CheckError(error);
+        }
+
+        public static void leveldb_put(IntPtr db,
+                                       IntPtr writeOptions,
+                                       string key,
+                                       UIntPtr keyLength,
+                                       byte[] value,
+                                       UIntPtr valueLength,
+                                       out string error)
+        {
+            IntPtr errorPtr;
+            leveldb_put(db, writeOptions, key, keyLength, value, valueLength,
+                out errorPtr);
+            error = GetAndReleaseString(errorPtr);
+        }
+
+        public static void leveldb_put(IntPtr db,
+                                       IntPtr writeOptions,
+                                       string key,
+                                       byte[] value)
+        {
+            string error;
+            var keyLength = GetStringLength(key);
+            var valueLength = new UIntPtr((uint)value.Length);
+            Native.leveldb_put(db, writeOptions,
+                key, keyLength,
+                value, valueLength, out error);
             CheckError(error);
         }
         #endregion
@@ -224,6 +260,25 @@ namespace LevelDB
                 return null;
             }
             var value = Marshal.PtrToStringAnsi(valuePtr, (int) valueLength);
+            leveldb_free(valuePtr);
+            return value;
+        }
+
+        public static byte[] leveldb_get_bytes(IntPtr db,
+                                               IntPtr readOptions,
+                                               string key)
+        {
+            UIntPtr valueLength;
+            string error;
+            var keyLength = GetStringLength(key);
+            var valuePtr = leveldb_get(db, readOptions, key, keyLength,
+                out valueLength, out error);
+            CheckError(error);
+            if (valuePtr == IntPtr.Zero || valueLength == UIntPtr.Zero) {
+                return null;
+            }
+            var value = new byte[(int)valueLength];
+            Marshal.Copy (valuePtr, value, 0, value.Length);
             leveldb_free(valuePtr);
             return value;
         }
